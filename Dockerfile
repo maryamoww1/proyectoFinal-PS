@@ -2,7 +2,13 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY sbac.py .
-COPY test_sbac.py .
+RUN pip install pytest pytest-cov
 
-CMD ["python", "-m", "unittest", "test_sbac", "-v"]
+COPY sbac.py .
+
+COPY test_unit.py .
+COPY test_integration.py .
+COPY test_regression.py .
+
+CMD ["pytest", "--cov=sbac", "--cov-report=term-missing"]
+

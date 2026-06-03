@@ -1,0 +1,175 @@
+\documentclass[12pt, letterpaper]{article}
+
+% Paquetes básicos
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish, es-tabla]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+
+
+% Formato de enlaces
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Documentación IEEE 829 - SBAC},
+}
+
+\begin{document}
+
+\begin{center}
+    \vspace*{1cm}
+    
+    {\Large \textbf{Universidad Nacional Autónoma de México} \par}
+    \vspace{0.5cm}
+    {\large \textbf{Facultad de Ciencias} \par}
+    
+    \vspace{2cm}
+    
+    {\LARGE \textbf{Documentación de Pruebas IEEE 829} \par}
+    \vspace{0.5cm}
+    {\Large Proyecto Final: Sistema Básico de Administración de Configuración (SBAC) \par}
+    
+    \vspace{2cm}
+    
+    \textbf{Materia:} Pruebas de Software y Administración de la Configuración \\
+    \textbf{Profesor:} Luis Rey Rutiaga Robles \\
+    
+    \vspace{1.5cm}
+    
+    \textbf{Integrantes:}\\
+    Maryam Michelle Del Monte Ortega \\
+    Integrante 2 \\
+    Integrante 3 \\
+    Integrante 4 \\
+
+    \vspace{2cm}
+    
+    \textbf{Fecha:}\\
+    04 de junio de 2026
+    
+    \vfill
+\end{center}
+
+\newpage
+
+\section{Plan de Pruebas}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Identificador:} TP-SBAC-1.0
+    \item \textbf{Introducción:} Este documento explica de forma clara cómo pusimos a prueba nuestro Sistema Básico de Administración de Configuración (SBAC). Nuestro objetivo es asegurar que esta herramienta de terminal (CLI) funcione sin problemas al guardar las versiones de los archivos.
+    \item \textbf{?`Qué vamos a probar?:}
+    \begin{itemize}
+        \item Que el repositorio se cree y se lea correctamente (\texttt{init}, \texttt{status}).
+        \item Que el sistema detecte y guarde los archivos sin perder información (\texttt{add}, \texttt{commit}).
+        \item Que el historial y las etiquetas sean fáciles de consultar (\texttt{history}, \texttt{baseline}, \texttt{list-baselines}, \texttt{diff}).
+        \item Que podamos viajar en el tiempo para recuperar archivos viejos (\texttt{checkout}).
+    \end{itemize}
+    \item \textbf{?`Cómo lo vamos a probar?:} Usaremos un enfoque mixto. Revisaremos que el código interno haga lo que debe (caja blanca) y probaremos el programa como si fuéramos un usuario final (caja negra). Todo esto está automatizado con las herramientas \texttt{unittest} y \texttt{pytest}, y se ejecuta dentro de un contenedor Docker (\texttt{python:3.11-slim}) para que funcione igual en cualquier computadora.
+    \item \textbf{Criterios de Éxito:} Consideramos que el sistema está listo si logra pasar automáticamente las 15 pruebas diseñadas y si la herramienta \texttt{pytest-cov} nos confirma que estamos evaluando más del 95\% de todo nuestro código escrito.
+\end{itemize}
+
+\section{Especificaciones de Diseño de Pruebas}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Identificador:} TDS-SBAC-1.0
+    \item \textbf{Puntos clave a revisar:} Queremos estar seguros de que la carpeta \texttt{.sbac} no se corrompa, que el archivo de configuración \texttt{metadata.json} guarde bien los datos, y que el programa no colapse si el usuario escribe un comando equivocado.
+    \item \textbf{Nuestra forma de trabajo:}
+    \begin{itemize}
+        \item \textbf{División de tareas:} Separamos las pruebas en tres grupos: pruebas pequeñas para funciones individuales (unitarias), pruebas para ver cómo se comunican las funciones entre sí (integración), y pruebas para asegurar que los archivos físicos viajen bien en el tiempo (regresión).
+        \item \textbf{Entorno seguro:} Cada vez que corremos una prueba, creamos una carpeta temporal invisible (\texttt{tempfile.mkdtemp()}). Así podemos probar cómo se copian y borran los archivos sin poner en riesgo nuestro proyecto real.
+    \end{itemize}
+\end{itemize}
+
+\section{Casos de Prueba}
+Aquí describimos los escenarios más importantes que evaluamos. \textit{(Nota: Nuestro sistema automatizado corre un total de 15 pruebas para cubrir estos casos y varios más)}.
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{TC-01: Iniciar el repositorio por primera vez}
+    \begin{itemize}
+        \item \textbf{?`Qué necesitamos antes?:} Nada, solo una carpeta vacía.
+        \item \textbf{Pasos:} Escribir el comando \texttt{sbac start} o \texttt{sbac init}.
+        \item \textbf{Qué debería pasar:} El sistema debe crear una carpeta oculta \texttt{.sbac/}, un espacio para guardar los archivos (\texttt{snapshots/}) y un documento JSON listo para registrar los cambios.
+    \end{itemize}
+    
+    \item \textbf{TC-02: Evitar que el programa colapse por descuidos del usuario}
+    \begin{itemize}
+        \item \textbf{?`Qué necesitamos antes?:} Estar en una carpeta donde NO se haya iniciado SBAC.
+        \item \textbf{Pasos:} Intentar usar comandos como \texttt{sbac add} o \texttt{sbac commit}.
+        \item \textbf{Qué debería pasar:} El programa debe detenerse amablemente y avisarle al usuario que primero debe iniciar el repositorio, en lugar de mostrar un error feo de Python en la pantalla.
+    \end{itemize}
+    
+    \item \textbf{TC-03: Comparar versiones usando etiquetas (Baselines)}
+    \begin{itemize}
+        \item \textbf{?`Qué necesitamos antes?:} Tener un archivo modificado y guardado con dos etiquetas distintas (por ejemplo, ``V1'' y ``V2'').
+        \item \textbf{Pasos:} Escribir \texttt{sbac diff V1 V2}.
+        \item \textbf{Qué debería pasar:} El sistema debe entender qué versión significa cada etiqueta y mostrarnos en pantalla exactamente qué líneas de código se agregaron o borraron.
+    \end{itemize}
+    
+    \item \textbf{TC-04: Viajar al pasado (Checkout)}
+    \begin{itemize}
+        \item \textbf{?`Qué necesitamos antes?:} Tener un archivo guardado, haberlo modificado, y haber guardado esa nueva versión.
+        \item \textbf{Pasos:} Escribir \texttt{sbac checkout v1} para pedirle que regrese al estado original.
+        \item \textbf{Qué debería pasar:} El archivo actual debe sobrescribirse para volver a ser idéntico a la versión antigua que le pedimos.
+    \end{itemize}
+\end{itemize}
+
+\section{Procedimientos de Prueba}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Identificador:} TPR-SBAC-1.0
+    \item \textbf{Requisitos Previos:} Solo necesitas tener Docker instalado en tu computadora.
+    \item \textbf{Pasos para correr las pruebas:}
+    \begin{enumerate}
+        \item Abre tu terminal en la carpeta del proyecto SBAC.
+        \item Empaqueta el entorno de pruebas escribiendo: \\ \texttt{docker build -t sbac-tests .}
+        \item Inicia las pruebas automatizadas escribiendo: \\ \texttt{docker run --rm sbac-tests}
+        \item Observa la pantalla: verás la confirmación de que todas las pruebas pasaron en color verde y una tabla mostrando el porcentaje de código evaluado.
+    \end{enumerate}
+\end{itemize}
+
+\section{Informes de Incidentes}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Identificador:} TIR-SBAC-01
+    \item \textbf{Fecha del problema:} 29 de mayo de 2026.
+    \item \textbf{?`Qué pasó?:} Durante las primeras pruebas, notamos que si intentábamos comparar dos versiones usando sus nombres de etiqueta (como \texttt{ESTABLE}), el programa colapsaba y se cerraba. Solo funcionaba si usábamos los números internos de versión (como \texttt{v2}).
+    \item \textbf{Problema causado:} No estábamos cumpliendo con una de las funciones principales que prometía el manual del usuario para visualizar cambios entre líneas base.
+    \item \textbf{Cómo lo arreglamos:} Modificamos la función \texttt{show\_diff}. Ahora, antes de comparar, el sistema revisa si la palabra que escribió el usuario es una etiqueta, si lo es, la traduce silenciosamente a su número de versión interno y la comparación funciona perfecto. \textbf{Incidente cerrado.}
+\end{itemize}
+
+\vspace{0.3cm}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Identificador:} TIR-SBAC-02
+    \item \textbf{Fecha del problema:} 30 de mayo de 2026.
+    \item \textbf{?`Qué pasó?:} Al realizar pruebas de estrés en la función de seguimiento, detectamos que si un usuario ejecutaba \texttt{sbac add archivo.txt} múltiples veces seguidas, el archivo se registraba repetidamente en el arreglo del \texttt{metadata.json}.
+    \item \textbf{Problema causado:} Duplicidad de datos. Esto provocaba que al hacer un \texttt{commit}, el sistema intentara copiar el mismo archivo físico varias veces, consumiendo recursos innecesarios y causando comportamientos erráticos al leer el historial.
+    \item \textbf{Cómo lo arreglamos:} Se implementó una validación condicional en la función \texttt{add\_file} (\texttt{if filename not in metadata[``tracked\_files'']:}). Ahora el sistema verifica si el archivo ya está en seguimiento y, de ser así, omite el registro y avisa al usuario amablemente. \textbf{Incidente cerrado.}
+\end{itemize}
+
+\vspace{0.3cm}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Identificador:} TIR-SBAC-03
+    \item \textbf{Fecha del problema:} 1 de junio de 2026.
+    \item \textbf{?`Qué pasó?:} Durante las pruebas de caminos alternos (edge cases), se ejecutó el comando \texttt{sbac commit ``Mensaje''} en un repositorio recién inicializado que no tenía ningún archivo agregado. 
+    \item \textbf{Problema causado:} Generación de ``commits fantasma''. El sistema creaba un nuevo ID de versión y generaba una carpeta vacía dentro de \texttt{snapshots/}, alterando el orden del historial sin guardar información real.
+    \item \textbf{Cómo lo arreglamos:} Se agregó una barrera preventiva al inicio de la función \texttt{create\_commit}. Si la lista de archivos en seguimiento está vacía, la ejecución se aborta inmediatamente y se notifica al usuario que debe usar \texttt{sbac add} primero. \textbf{Incidente cerrado.}
+\end{itemize}
+
+\section{Informes de Prueba}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Identificador:} TSR-SBAC-1.0
+    \item \textbf{Resumen del trabajo:} Corrimos todo el paquete de pruebas sobre la versión final del sistema sin ningún contratiempo. Para tener el código más limpio y ordenado, separamos las pruebas en tres archivos distintos (\texttt{test\_unit.py}, \texttt{test\_integration.py} y \texttt{test\_regression.py}).
+    \item \textbf{Nuestros Resultados:}
+    \begin{itemize}
+        \item \textbf{Pruebas realizadas:} 15
+        \item \textbf{Pruebas que pasaron exitosamente:} 15 (100\% de éxito).
+        \item \textbf{Porcentaje de código evaluado:} 99\% (150 de 152 líneas de código).
+    \end{itemize}
+    \item \textbf{?`Por qué sacamos 99\% y no 100\%?:} Alcanzar un 99\% es un indicador de calidad excelente. El 1\% faltante son solo dos líneas de código interno (\texttt{132} y \texttt{134}) que actúan como ``seguros de vida'' al momento de traducir las etiquetas de las versiones. Es muy difícil obligar al entorno de pruebas a activar estas alarmas preventivas, lo cual es algo completamente normal y aceptado en la industria del software.
+    \item \textbf{Conclusión Final:} El sistema SBAC cumple con su propósito de guardar versiones de forma confiable. Demostró ser muy resistente incluso cuando intentamos engañarlo borrando archivos a la fuerza o pidiéndole datos vacíos. Al usar Docker, garantizamos que el profesor o cualquier usuario pueda usarlo sin tener que configurar nada en su computadora. El software está listo para entregarse.
+\end{itemize}
+
+\end{document}

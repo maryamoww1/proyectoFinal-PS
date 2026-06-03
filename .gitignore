@@ -1,6 +1,11 @@
+# Entornos virtuales y cachés de Python
+venv/
 .venv/
 .pytest_cache/
 __pycache__/
+.coverage
+
+# Archivos compilados de Python
 *.pyc
 *.pyo
 *.pyd
@@ -8,3 +13,12 @@ __pycache__/
 *.pyz
 *.pywz
 *.pyzw
+
+# Archivos de compilación de LaTeX
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.xdv

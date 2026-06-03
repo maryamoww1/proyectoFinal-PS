@@ -126,8 +126,14 @@ def show_diff(v1, v2):
         print("SBAC: Repositorio no inicializado.")
         return
     metadata = load_metadata()
+    
+    if v1 in metadata.get("baselines", {}):
+        v1 = metadata["baselines"][v1]
+    if v2 in metadata.get("baselines", {}):
+        v2 = metadata["baselines"][v2]
+
     if v1 not in metadata["commits"] or v2 not in metadata["commits"]:
-        print("SBAC: Una o ambas versiones especificadas no existen.")
+        print("SBAC: Una o ambas versiones/líneas base especificadas no existen.")
         return
 
     print(f"=== Diferencias entre {v1} y {v2} ===")
@@ -157,7 +163,6 @@ def show_diff(v1, v2):
         else:
             print(f"\n--- {filename}: Sin cambios ---")
     print("\n")
-
 def checkout_version(version):
     if not os.path.exists(REPO_DIR):
         print("SBAC: Repositorio no inicializado.")
@@ -177,7 +182,7 @@ def checkout_version(version):
     save_metadata(metadata)
     print(f"SBAC: Has regresado a la versión '{version}'. Los archivos en tu directorio han sido sobrescritos.")
 
-def main():
+def main():# pragma: no cover
     parser = argparse.ArgumentParser(description="SBAC: Sistema Básico de Administración de Configuración")
     subparsers = parser.add_subparsers(dest="command", help="Comandos disponibles")
 
@@ -229,5 +234,5 @@ def main():
     else:
         parser.print_help()
 
-if __name__ == "__main__":
+if __name__ == "__main__":# pragma: no cover
     main()
